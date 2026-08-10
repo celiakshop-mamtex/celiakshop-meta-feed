@@ -1,0 +1,60 @@
+# =============================================================================
+# META ads feed — celiakshop.cz
+# Doplňuje g:custom_label_0 = ABC třída produktu ("a" / "b" / "c")
+#
+# ABC se počítá stejně jako v Streamlit dashboardu
+# (streamlit/modules/analytics.py → calculate_abc_analysis).
+# Zdroj prodejů: objednávkový CSV export ze Shoptetu (env ORDERS_URL).
+# =============================================================================
+
+feed_url: "https://www.celiakshop.cz/facebook/export/products.xml"
+output_file: "meta-products.xml"
+
+# -----------------------------------------------------------------------------
+# ABC analýza
+# -----------------------------------------------------------------------------
+
+# Klouzavé okno — kolik měsíců zpět od dne běhu se počítají tržby
+abc_window_months: 6
+
+# Metrika řazení: "revenue" (tržby bez DPH) nebo "margin" (tržby − nákupní cena)
+abc_metric: "revenue"
+
+# Prahy kumulativního podílu — stejné jako ABC_THRESHOLD_A/B v dashboardu
+abc_threshold_a: 0.80   # A = kumulativně do 80 %
+abc_threshold_b: 0.95   # B = do 95 %, zbytek C
+
+# Produkty ve feedu, které se v okně vůbec neprodaly (nemají žádnou objednávku).
+# Prázdná hodnota = nedostanou custom_label_0 vůbec.
+unsold_class: "C"
+
+# -----------------------------------------------------------------------------
+# Zápis do feedu
+# -----------------------------------------------------------------------------
+
+label_element: "custom_label_0"
+
+# Mapování třídy → hodnota v feedu. Třídu lze vynechat (nebo nechat prázdnou)
+# a produkty té třídy pak element nedostanou vůbec.
+labels:
+  A: "a"
+  B: "b"
+  C: "c"
+
+# -----------------------------------------------------------------------------
+# Čištění objednávek (musí odpovídat dashboardu)
+# -----------------------------------------------------------------------------
+
+# Stornované objednávky — vyloučí řádky, jejichž statusName obsahuje tento text
+exclude_status_contains: "storno"
+
+# Nezbožové položky objednávky (doprava, platba)
+#
+# POZOR: dashboard vylučuje jen SHIPPING a BILLING, kupóny (COUPON*) nechává
+# v datech — mají zápornou tržbu (−33 tis. Kč / 6 měs.), takže snižují celkový
+# součet a hranice A je o něco přísnější. Necháváme stejně kvůli shodě s
+# dashboardem (ověřeno: 473 produktů ve třídě A, 0 rozdílů).
+# Přidáním "COUPON" níže se třída A rozšíří (naposledy o 17 produktů).
+exclude_code_prefixes:
+  - "SHIPPING"
+  - "BILLING"
